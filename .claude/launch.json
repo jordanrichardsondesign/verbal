@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "etchfilms-client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "client",
+      "port": 5173
+    },
+    {
+      "name": "etchfilms-server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--watch", "src/index.js"],
+      "port": 3000
+    }
+  ]
+}
