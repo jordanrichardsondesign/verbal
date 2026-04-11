@@ -19,3 +19,36 @@ a {
   text-decoration: none;
   color: inherit;
 }
+
+/* ── Dashboard container queries (breakpoint: 900px content width) ── */
+@container (max-width: 900px) {
+  /* Hero group: chart stacks above missed items */
+  .dashboard-hero {
+    flex-direction: column;
+  }
+  .dashboard-hero .hero-right {
+    width: 100%;
+  }
+
+  /* Second row: avg call duration stacks above checklist coverage */
+  .dashboard-second-row {
+    flex-direction: column;
+  }
+  .dashboard-second-row .avg-call-card {
+    width: 100%;
+  }
+
+  /* Stat row: 2 cards per row */
+  .dashboard-stat-row {
+    flex-wrap: wrap;
+  }
+  .dashboard-stat-row > * {
+    flex: 0 0 calc(50% - 6px);
+    min-width: 0;
+  }
+
+  /* Action row: what to act on stacks above coaching roster */
+  .dashboard-action-row {
+    flex-direction: column;
+  }
+}

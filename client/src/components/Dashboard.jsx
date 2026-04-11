@@ -1,9 +1,16 @@
-import { Funnel, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { Funnel } from 'lucide-react';
+import DashboardHeroGroup from './DashboardHeroGroup';
+import DashboardSecondRow from './DashboardSecondRow';
+import StatRow from './StatRow';
+import DashboardActionRow from './DashboardActionRow';
+import DateRangePicker from './DateRangePicker';
+import ChecklistPicker from './ChecklistPicker';
 
 function FilterButton({ icon: Icon, label, active }) {
   return (
     <button
-      className={`flex items-center gap-0.5 h-[46px] px-[14px] py-2 rounded-lg border border-light-stroke text-xs font-medium text-dark-grey-5 whitespace-nowrap cursor-pointer transition-colors hover:bg-gray-50 ${
+      className={`flex items-center gap-0.5 h-[42px] px-[14px] py-2 rounded-lg border border-light-stroke text-xs font-medium text-dark-grey-5 whitespace-nowrap cursor-pointer transition-colors hover:bg-gray-50 ${
         active ? 'bg-white' : 'bg-white'
       }`}
     >
@@ -16,8 +23,10 @@ function FilterButton({ icon: Icon, label, active }) {
 }
 
 export default function Dashboard() {
+  const [activePeriod, setActivePeriod] = useState('1W');
+
   return (
-    <div className="flex flex-col flex-1 px-10 py-[30px]">
+    <div className="flex flex-col flex-1 px-10 py-[30px] gap-3 [container-type:inline-size]">
       {/* Header row */}
       <div className="flex items-center gap-[10px] w-full">
         <div className="flex items-center pr-5">
@@ -26,16 +35,25 @@ export default function Dashboard() {
           </h1>
         </div>
 
-        <FilterButton icon={Funnel} label="All Calls (356)" />
+        <ChecklistPicker />
         <FilterButton icon={Funnel} label="Status" />
 
         <div className="flex-1" />
 
-        <FilterButton icon={Calendar} label="This month" />
+        <DateRangePicker activePeriod={activePeriod} setActivePeriod={setActivePeriod} />
       </div>
 
-      {/* Content area placeholder */}
-      <div className="flex-1 mt-8" />
+      {/* Hero group — chart + missed items */}
+      <DashboardHeroGroup period={activePeriod} />
+
+      {/* Second row — avg call duration + checklist coverage */}
+      <DashboardSecondRow />
+
+      {/* Stat row — team performance highlights */}
+      <StatRow />
+
+      {/* Action row — what to act on + coaching roster */}
+      <DashboardActionRow />
     </div>
   );
 }

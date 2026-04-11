@@ -2,7 +2,7 @@ import { Bell } from 'lucide-react';
 
 export default function TopNav({ user = { name: 'Jonathan Doe', role: 'Manager', initials: 'JD' } }) {
   return (
-    <header className="flex items-center justify-end gap-[30px] h-[80px] px-10 border-b border-light-stroke bg-white shrink-0 w-full">
+    <header className="flex items-center justify-end gap-[30px] h-[80px] px-10 bg-pale-white border-b border-[#ebebeb] shrink-0 w-full">
       {/* Notification bell */}
       <button className="relative flex items-center justify-center size-8 rounded-full hover:bg-gray-100 transition-colors cursor-pointer">
         <span className="absolute top-[6px] right-[6px] size-2 rounded-full bg-ruby z-10" />
