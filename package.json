@@ -1,7 +1,7 @@
 {
-  "name": "etchfilms",
+  "name": "verbal",
   "version": "1.0.0",
-  "description": "Etch Films Node.js/Express server",
+  "description": "Verbal healthcare call monitoring server",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
