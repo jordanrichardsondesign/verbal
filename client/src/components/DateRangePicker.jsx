@@ -253,12 +253,12 @@ export default function DateRangePicker({ activePeriod, setActivePeriod }) {
     setCustomStart(start);
     setCustomEnd(end);
     setCalOpen(false);
-    // Clear period highlight when custom range is chosen
-    setActivePeriod(null);
+    // Don't touch activePeriod — consumers may rely on it being a valid string
   }
 
   function handlePeriod(p) {
     setActivePeriod(p);
+    // Clearing custom range returns control to the period tabs
     setCustomStart(null);
     setCustomEnd(null);
   }
@@ -307,7 +307,7 @@ export default function DateRangePicker({ activePeriod, setActivePeriod }) {
             key={p}
             onClick={() => handlePeriod(p)}
             className={`px-[8px] py-[6px] rounded-[6px] text-[12px] whitespace-nowrap transition-colors cursor-pointer ${
-              activePeriod === p
+              !hasCustom && activePeriod === p
                 ? 'bg-pale-green font-bold text-dark-green'
                 : 'font-normal text-[#9b9ba7] hover:bg-pale-green/40'
             }`}
