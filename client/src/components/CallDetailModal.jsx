@@ -10,66 +10,7 @@ import {
 } from 'lucide-react';
 import Tooltip from './Tooltip';
 import { ChecklistMenu, DEFAULT_CHECKLISTS } from './ChecklistPicker';
-
-/* ────────────────────────────────────────────────
-   Animated adherence gauge (SVG semicircle arc)
-───────────────────────────────────────────────── */
-const ARC_R = 42;
-const ARC_LEN = Math.PI * ARC_R; // π * r = half-circle arc length
-
-function AdherenceGauge({ pct }) {
-  const [animated, setAnimated] = useState(false);
-
-  // Trigger animation after a brief delay so transition fires post-mount
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(true), 80);
-    return () => clearTimeout(t);
-  }, [pct]);
-
-  // Reset + re-animate when call changes
-  useEffect(() => {
-    setAnimated(false);
-    const t = setTimeout(() => setAnimated(true), 80);
-    return () => clearTimeout(t);
-  }, [pct]);
-
-  const color = pct >= 80 ? '#34b0b4' : pct >= 50 ? '#ff9848' : '#ff5f7c';
-  const label = pct >= 80 ? 'Good 👍' : pct >= 50 ? 'Fair' : 'Needs Work';
-  const dashOffset = animated ? ARC_LEN * (1 - pct / 100) : ARC_LEN;
-
-  // Semicircle: M (cx-r, cy) A r r 0 0 1 (cx+r, cy)
-  const cx = 50;
-  const cy = 52;
-  const d = `M ${cx - ARC_R} ${cy} A ${ARC_R} ${ARC_R} 0 0 1 ${cx + ARC_R} ${cy}`;
-
-  return (
-    <div className="flex flex-col items-center justify-center px-7 py-5 gap-1">
-      <div className="relative w-[100px] h-[60px]">
-        <svg viewBox="0 0 100 60" className="w-full h-full overflow-visible">
-          {/* Background track */}
-          <path d={d} fill="none" stroke="#f0f0f3" strokeWidth="7" strokeLinecap="round" />
-          {/* Animated foreground */}
-          <path
-            d={d}
-            fill="none"
-            stroke={color}
-            strokeWidth="7"
-            strokeLinecap="round"
-            strokeDasharray={`${ARC_LEN} ${ARC_LEN}`}
-            strokeDashoffset={dashOffset}
-            style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.4,0,0.2,1)' }}
-          />
-        </svg>
-        {/* Centered label */}
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-1">
-          <span className="text-[22px] font-semibold leading-none" style={{ color: '#444' }}>{pct}%</span>
-        </div>
-      </div>
-      <span className="text-[12px] text-[#888]">Adherence</span>
-      <span className="text-[11px] font-semibold" style={{ color }}>{label}</span>
-    </div>
-  );
-}
+import { Badge } from './CallsTable';
 
 /* ────────────────────────────────────────────────
    Shared atoms
@@ -130,13 +71,25 @@ function CollapsedPanel({ label, onExpand, side }) {
   );
 }
 
-function StatBlock({ label, icon: Icon, value }) {
+function StatBlock({ label, icon: Icon, value, variant }) {
   return (
-    <div className="flex flex-col gap-[5px] justify-center h-[59px]">
-      <span className="text-[10px] font-medium text-[#777] whitespace-nowrap leading-[12px]">{label}</span>
-      <div className="flex items-center gap-[8px]">
-        <Icon size={16} strokeWidth={1.75} className="text-[#555] shrink-0" />
-        <span className="text-[14px] font-medium text-[#555] whitespace-nowrap">{value}</span>
+    <div className="flex flex-col gap-[10px] px-4 py-4 min-w-0 flex-1">
+      <div className="flex items-center gap-[6px]">
+        <Icon size={13} strokeWidth={1.75} className="text-[#888] shrink-0" />
+        <span className="text-[11px] font-medium text-[#888] whitespace-nowrap">{label}</span>
+      </div>
+      <Badge value={value} variant={variant} />
+    </div>
+  );
+}
+
+function AdherencePill({ color, label, value }) {
+  return (
+    <div className="flex items-center gap-2 bg-[#fafafd] border border-[#ebebeb] rounded-full px-3 py-[5px] shrink-0">
+      <div className="h-[4px] w-[20px] rounded-full shrink-0" style={{ backgroundColor: color }} />
+      <div className="flex items-center gap-1.5 text-[12px] whitespace-nowrap">
+        <span className="font-normal text-[#555]">{label}</span>
+        <span className="font-bold text-[#555]">{value}</span>
       </div>
     </div>
   );
@@ -173,7 +126,7 @@ function CheckItem({ checked, onChange }) {
 function ActionCard({ item }) {
   if (item.done) {
     return (
-      <div className="flex-1 min-w-0 flex flex-col gap-[10px] bg-[#e7fffd] rounded-[8px] p-[18px]">
+      <div className="flex-1 min-w-0 flex flex-col gap-[6px] bg-[#e7fffd] rounded-[8px] p-[18px]">
         <div className="flex items-start gap-[12px]">
           <CircleCheckBig size={15} strokeWidth={1.75} className="text-[#44605e] shrink-0 mt-px" />
           <span className="flex-1 min-w-0 text-[12px] font-semibold text-[#44605e] leading-normal">
@@ -182,7 +135,7 @@ function ActionCard({ item }) {
           <MoreHorizontal size={16} strokeWidth={1.75} className="text-[#ccc] shrink-0" />
         </div>
         {item.note && (
-          <div className="ml-[25px] bg-[rgba(97,137,133,0.1)] px-[12px] py-[6px]">
+          <div className="ml-[25px] bg-[rgba(97,137,133,0.1)] px-[12px] py-[3px]">
             <span className="text-[12px] text-[#555] italic leading-none">{item.note}</span>
           </div>
         )}
@@ -469,7 +422,7 @@ const TRANSCRIPT_LINES = [
   { role: 'provider', time: '00:03', text: "Good. Let's go over any parts that were unclear and make sure you're set up for success." },
 ];
 
-function TranscriptPanel({ call, onCollapse }) {
+function TranscriptPanel({ call, onCollapse, onToast }) {
   return (
     <div className="flex flex-col flex-1 bg-white rounded-lg overflow-hidden">
       {/* Header */}
@@ -489,7 +442,16 @@ function TranscriptPanel({ call, onCollapse }) {
             </button>
           </Tooltip>
           <Tooltip label="Copy" side="bottom">
-            <button className="p-1.5 rounded-md hover:bg-[#f7f7f9] cursor-pointer transition-colors">
+            <button
+              className="p-1.5 rounded-md hover:bg-[#f7f7f9] cursor-pointer transition-colors"
+              onClick={() => {
+                const text = TRANSCRIPT_LINES.map(
+                  l => `[${l.time}] ${l.role === 'provider' ? 'Provider' : 'Patient'}: ${l.text}`
+                ).join('\n');
+                navigator.clipboard.writeText(text);
+                onToast?.('Transcript copied to clipboard');
+              }}
+            >
               <svg width="14" height="14" fill="none" stroke="#9b9ba7" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                 <rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
               </svg>
@@ -755,7 +717,7 @@ function ChartNotePanel({ onCollapse }) {
 /* ────────────────────────────────────────────────
    Resizable panel group
 ───────────────────────────────────────────────── */
-function ResizablePanelGroup({ call }) {
+function ResizablePanelGroup({ call, onToast }) {
   const containerRef = useRef(null);
   const dragRef      = useRef(null);
 
@@ -872,7 +834,7 @@ function ResizablePanelGroup({ call }) {
         ? <CollapsedPanel label="Transcript" onExpand={() => toggleCollapse('transcript')} side="left" />
         : (
           <div style={{ width: widths.transcript, flexShrink: 0 }} className="flex flex-col min-h-0">
-            <TranscriptPanel call={call} onCollapse={() => toggleCollapse('transcript')} />
+            <TranscriptPanel call={call} onCollapse={() => toggleCollapse('transcript')} onToast={onToast} />
           </div>
         )}
 
@@ -927,10 +889,57 @@ function AudioPlayer() {
 }
 
 /* ────────────────────────────────────────────────
+   Slide-down toast notification
+───────────────────────────────────────────────── */
+function Toast({ message, show }) {
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: '50%',
+        zIndex: 99999,
+        pointerEvents: 'none',
+        transform: show ? 'translate(-50%, 16px)' : 'translate(-50%, -60px)',
+        transition: show
+          ? 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          : 'transform 0.22s ease-in',
+      }}
+    >
+      <div style={{
+        background: '#222',
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: 500,
+        padding: '9px 18px',
+        borderRadius: 10,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.22)',
+        whiteSpace: 'nowrap',
+        letterSpacing: '-0.01em',
+      }}>
+        {message}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* ────────────────────────────────────────────────
    Main modal
 ───────────────────────────────────────────────── */
 export default function CallDetailModal({ call, callIndex, totalCalls, onClose, onNext, onPrev }) {
   const [visible, setVisible] = useState(false);
+
+  // Toast notification
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastShow, setToastShow] = useState(false);
+  const toastTimer = useRef(null);
+  function showToast(msg) {
+    clearTimeout(toastTimer.current);
+    setToastMsg(msg);
+    setToastShow(true);
+    toastTimer.current = setTimeout(() => setToastShow(false), 3000);
+  }
 
   // Slide in on mount
   useEffect(() => {
@@ -943,7 +952,6 @@ export default function CallDetailModal({ call, callIndex, totalCalls, onClose, 
     setTimeout(onClose, 300);
   }
 
-  const adherencePct = parseInt(call.callAdh.value) || 0;
   const callId = `${93856000000 + callIndex * 759372}`;
 
   // Editable patient name
@@ -961,7 +969,7 @@ export default function CallDetailModal({ call, callIndex, totalCalls, onClose, 
     .slice(0, 2)
     .toUpperCase();
 
-  return createPortal(
+  const modal = createPortal(
     <div
       className={`fixed inset-0 z-[200] bg-[#f3f4f6] flex flex-col transition-transform duration-300 ease-in-out ${
         visible ? 'translate-x-0' : 'translate-x-full'
@@ -1004,7 +1012,13 @@ export default function CallDetailModal({ call, callIndex, totalCalls, onClose, 
         <div className="flex-1" />
 
         <Tooltip label="Copy Link" side="bottom">
-          <button className="flex items-center justify-center size-[32px] rounded-lg hover:bg-[#f0f0f3] cursor-pointer">
+          <button
+            className="flex items-center justify-center size-[32px] rounded-lg hover:bg-[#f0f0f3] cursor-pointer"
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href + '#call-' + callId);
+              showToast('Call URL copied to clipboard');
+            }}
+          >
             <Link2 size={15} strokeWidth={1.75} className="text-[#9b9ba7]" />
           </button>
         </Tooltip>
@@ -1016,14 +1030,9 @@ export default function CallDetailModal({ call, callIndex, totalCalls, onClose, 
       </div>
 
       {/* ── Stats row ── */}
-      <div className="flex items-stretch gap-3 px-5 pt-4 shrink-0">
-        {/* Adherence donut */}
-        <div className="bg-white rounded-lg shrink-0">
-          <AdherenceGauge pct={adherencePct} />
-        </div>
-
+      <div className="flex items-stretch gap-3 px-5 pt-3 shrink-0">
         {/* Call details box — 500px, Figma design */}
-        <div className="bg-white rounded-lg shrink-0 flex flex-col justify-center gap-[10px] px-[30px] py-[20px]" style={{ width: 500 }}>
+        <div className="bg-white rounded-lg shrink-0 flex flex-col justify-center gap-[10px] px-[30px] py-[20px]" style={{ width: 450 }}>
           {/* Row 1: date + time pills */}
           <div className="flex items-center gap-[10px]">
             <div className="flex items-center gap-[4px] h-[22px] px-[11px] py-[3px] rounded-full bg-[#e6f2f1]">
@@ -1082,21 +1091,33 @@ export default function CallDetailModal({ call, callIndex, totalCalls, onClose, 
           </div>
         </div>
 
-        {/* Stat blocks — fill remaining width */}
-        <div className="bg-white rounded-lg flex items-center gap-[60px] px-[30px] flex-1 min-w-0">
-          <StatBlock label="Pace"              icon={Gauge} value={call.pace.value} />
-          <StatBlock label="Listen Ratio"      icon={Ear}   value={`${call.listen.value} Listen`} />
-          <StatBlock label="Provider Language" icon={Smile} value={`${call.language.value} Positive`} />
-          <StatBlock label="Patient Language"  icon={Smile} value="74% Positive" />
+        {/* Stat blocks — team-member-page style */}
+        <div className="bg-white rounded-lg flex items-center gap-3 px-6 flex-1 min-w-0">
+          {/* Adherence pills stacked */}
+          <div className="flex flex-col gap-[8px] shrink-0 pr-3">
+            <AdherencePill color="#34b0b4" label="Call adherence" value={call.callAdh.value} />
+            <AdherencePill color="#3ba7ff" label="Note adherence" value={call.noteAdh.value} />
+          </div>
+          <div className="w-px self-stretch bg-[#f0f0f3] shrink-0" />
+          <StatBlock label="Duration"     icon={Clock}  value={call.duration.value} variant={call.duration.variant} />
+          <StatBlock label="Pace"         icon={Gauge}  value={call.pace.value}     variant={call.pace.variant} />
+          <StatBlock label="Listen Ratio" icon={Ear}    value={call.listen.value}   variant={call.listen.variant} />
+          <StatBlock label="Language"     icon={Smile}  value={call.language.value} variant={call.language.variant} />
         </div>
       </div>
 
       {/* ── Three-panel body ── */}
-      <ResizablePanelGroup call={call} />
+      <ResizablePanelGroup call={call} onToast={showToast} />
 
       {/* ── Audio player ── */}
       <AudioPlayer />
     </div>,
     document.body
+  );
+  return (
+    <>
+      {modal}
+      <Toast message={toastMsg} show={toastShow} />
+    </>
   );
 }

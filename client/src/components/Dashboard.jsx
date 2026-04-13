@@ -16,9 +16,11 @@ function FilterButton({ icon: Icon, label, active }) {
         active ? 'bg-white' : 'bg-white'
       }`}
     >
-      <div className="flex items-center justify-center size-[30px]">
-        <Icon size={16} strokeWidth={1.75} className="text-dark-grey-5" />
-      </div>
+      {Icon && (
+        <div className="flex items-center justify-center size-[30px]">
+          <Icon size={16} strokeWidth={1.75} className="text-dark-grey-5" />
+        </div>
+      )}
       {label}
     </button>
   );
@@ -30,7 +32,7 @@ export default function Dashboard({ onNavigate }) {
   return (
     <div className="flex flex-col flex-1 px-10 py-[30px] gap-3 [container-type:inline-size]">
       {/* Header row */}
-      <div className="flex items-center gap-[10px] w-full">
+      <div className="flex items-center gap-[6px] w-full">
         <div className="flex items-center pr-5">
           <h1 className="text-2xl font-medium text-dark-grey-4 whitespace-nowrap">
             Dashboard
@@ -38,7 +40,7 @@ export default function Dashboard({ onNavigate }) {
         </div>
 
         <ChecklistPicker />
-        <FilterButton icon={Funnel} label="Status" />
+        <FilterButton label="Status" />
         <ProviderPicker />
         <PatientPicker />
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Trophy, Globe, Gauge, Ear, Smile, Clock, ListChecks } from 'lucide-react';
+import { ArrowLeft, Trophy, Globe, Gauge, Ear, Smile, Clock } from 'lucide-react';
 import DateRangePicker from './DateRangePicker';
 import ChecklistPicker from './ChecklistPicker';
 import PatientPicker from './PatientPicker';
@@ -17,6 +17,19 @@ function StatCard({ label, icon: Icon, value, variant }) {
         <span className="text-[11px] font-medium text-[#888] whitespace-nowrap">{label}</span>
       </div>
       <Badge value={value} variant={variant} />
+    </div>
+  );
+}
+
+/* ── Adherence pill (mirrors Dashboard LegendPill) ── */
+function AdherencePill({ color, label, value }) {
+  return (
+    <div className="flex items-center gap-2 bg-[#fafafd] border border-[#ebebeb] rounded-full px-3 py-[5px] shrink-0">
+      <div className="h-[4px] w-[20px] rounded-full shrink-0" style={{ backgroundColor: color }} />
+      <div className="flex items-center gap-1.5 text-[12px] whitespace-nowrap">
+        <span className="font-normal text-[#555]">{label}</span>
+        <span className="font-bold text-[#555]">{value}</span>
+      </div>
     </div>
   );
 }
@@ -84,19 +97,17 @@ export default function TeamMemberPage({ member, onBack }) {
   ];
 
   const STATS = [
-    { label: 'Call Adherence', icon: ListChecks, ...member.callAdh  },
-    { label: 'Note Adherence', icon: ListChecks, ...member.noteAdh  },
-    { label: 'Avg Duration',   icon: Clock,      ...member.duration },
-    { label: 'Pace',           icon: Gauge,      ...member.pace     },
-    { label: 'Listen Ratio',   icon: Ear,        ...member.listen   },
-    { label: 'Positivity',     icon: Smile,      ...member.language },
+    { label: 'Avg Duration', icon: Clock,  ...member.duration },
+    { label: 'Pace',         icon: Gauge,  ...member.pace     },
+    { label: 'Listen Ratio', icon: Ear,    ...member.listen   },
+    { label: 'Positivity',   icon: Smile,  ...member.language },
   ];
 
   return (
     <div className="flex flex-col flex-1 px-10 py-[30px] gap-5">
 
       {/* ── Header bar ── */}
-      <div className="flex items-center gap-[10px] w-full">
+      <div className="flex items-center gap-[6px] w-full">
         {/* Back */}
         <button
           onClick={onBack}
@@ -151,6 +162,13 @@ export default function TeamMemberPage({ member, onBack }) {
 
         {/* Stat cards */}
         <div className="flex-1 bg-white rounded-lg px-6 py-6 flex items-center gap-3">
+          {/* Adherence pills — stacked vertically */}
+          <div className="flex flex-col gap-[8px] shrink-0 pr-3">
+            <AdherencePill color="#34b0b4" label="Call adherence" value={member.callAdh.value} />
+            <AdherencePill color="#3ba7ff" label="Note adherence" value={member.noteAdh.value} />
+          </div>
+          <div className="w-px self-stretch bg-[#f0f0f3] shrink-0" />
+          {/* Remaining stat cards */}
           {STATS.map((s) => (
             <StatCard key={s.label} {...s} />
           ))}

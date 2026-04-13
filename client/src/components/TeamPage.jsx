@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Funnel, UserPlus, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { UserPlus, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import Tooltip from './Tooltip';
 import { FilterButton, SearchInput } from './PageControls';
 
@@ -287,12 +287,10 @@ export default function TeamPage({ onSelectMember }) {
   return (
     <div className="flex flex-col flex-1 px-10 py-[30px] gap-5">
       {/* Header row */}
-      <div className="flex items-center gap-[10px] w-full">
+      <div className="flex items-center gap-[6px] w-full">
         <div className="flex items-center pr-5">
           <h1 className="text-2xl font-medium text-[#444] whitespace-nowrap">Team</h1>
         </div>
-        <FilterButton icon={Funnel} label="All members" />
-        <FilterButton icon={Funnel} label="Status" />
         <div className="flex-1" />
         <span className="text-[14px] font-normal text-[#778393] tracking-[-0.18px] px-[10px] whitespace-nowrap">
           154 team members

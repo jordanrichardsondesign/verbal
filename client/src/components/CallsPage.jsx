@@ -3,7 +3,7 @@ import {
   ComposedChart, Scatter, Line, XAxis, YAxis,
   ReferenceLine, ResponsiveContainer, Tooltip, CartesianGrid,
 } from 'recharts';
-import { Funnel, User, TrendingUp, ChevronDown, Check } from 'lucide-react';
+import { Funnel, User, TrendingUp, TrendingDown, ChevronDown, Check } from 'lucide-react';
 import DateRangePicker from './DateRangePicker';
 import ChecklistPicker from './ChecklistPicker';
 import ProviderPicker from './ProviderPicker';
@@ -59,25 +59,209 @@ const TREND_DATA = [
 
 const X_TICKS = [1, 5, 9, 13, 17, 21, 25];
 
+/* ── Per-metric scatter + trend data ── */
+
+const NOTE_SCATTER = [
+  { x: 1,  y: 62, provider: 'Stephanie Jackson', initials: 'SJ', duration: '01:20:34' },
+  { x: 1,  y: 71, provider: 'Michael King',       initials: 'MK', duration: '00:48:10' },
+  { x: 2,  y: 85, provider: 'Laura Hill',         initials: 'LH', duration: '00:32:55' },
+  { x: 3,  y: 58, provider: 'Alice Newton',       initials: 'AN', duration: '00:12:04' },
+  { x: 3,  y: 78, provider: 'Robert Collins',     initials: 'RC', duration: '00:55:22' },
+  { x: 4,  y: 90, provider: 'Henry James',        initials: 'HJ', duration: '01:02:18' },
+  { x: 5,  y: 52, provider: 'Cynthia Turner',     initials: 'CT', duration: '00:41:33' },
+  { x: 5,  y: 75, provider: 'James Peterson',     initials: 'JP', duration: '00:28:47' },
+  { x: 6,  y: 68, provider: 'Emma Matthews',      initials: 'EM', duration: '00:37:15' },
+  { x: 7,  y: 55, provider: 'Thomas White',       initials: 'TW', duration: '00:51:09' },
+  { x: 8,  y: 88, provider: 'Stephanie Jackson',  initials: 'SJ', duration: '00:44:20' },
+  { x: 9,  y: 72, provider: 'Michael King',       initials: 'MK', duration: '00:19:38' },
+  { x: 9,  y: 60, provider: 'Alice Newton',       initials: 'AN', duration: '00:22:51' },
+  { x: 11, y: 82, provider: 'Laura Hill',         initials: 'LH', duration: '00:38:12' },
+  { x: 12, y: 77, provider: 'Robert Collins',     initials: 'RC', duration: '00:59:44' },
+  { x: 13, y: 91, provider: 'Henry James',        initials: 'HJ', duration: '00:46:05' },
+  { x: 13, y: 48, provider: 'Cynthia Turner',     initials: 'CT', duration: '00:15:30' },
+  { x: 14, y: 80, provider: 'James Peterson',     initials: 'JP', duration: '00:33:18' },
+  { x: 15, y: 73, provider: 'Emma Matthews',      initials: 'EM', duration: '00:52:47' },
+  { x: 17, y: 86, provider: 'Thomas White',       initials: 'TW', duration: '00:29:55' },
+  { x: 18, y: 92, provider: 'Stephanie Jackson',  initials: 'SJ', duration: '00:41:10' },
+  { x: 19, y: 69, provider: 'Michael King',       initials: 'MK', duration: '00:24:33' },
+  { x: 20, y: 84, provider: 'Laura Hill',         initials: 'LH', duration: '00:36:08' },
+  { x: 21, y: 79, provider: 'Robert Collins',     initials: 'RC', duration: '01:04:22' },
+  { x: 22, y: 88, provider: 'Henry James',        initials: 'HJ', duration: '00:49:17' },
+  { x: 23, y: 76, provider: 'James Peterson',     initials: 'JP', duration: '00:31:44' },
+  { x: 24, y: 93, provider: 'Emma Matthews',      initials: 'EM', duration: '00:58:30' },
+  { x: 25, y: 88, provider: 'Stephanie Jackson',  initials: 'SJ', duration: '00:43:55' },
+];
+const NOTE_TREND = [
+  { x: 1, trend: 68 }, { x: 5, trend: 70 }, { x: 9, trend: 72 },
+  { x: 13, trend: 74 }, { x: 17, trend: 75 }, { x: 21, trend: 76 }, { x: 25, trend: 76 },
+];
+
+const PACE_SCATTER = [
+  { x: 1,  y: 155, provider: 'Stephanie Jackson', initials: 'SJ', duration: '01:20:34' },
+  { x: 1,  y: 138, provider: 'Michael King',      initials: 'MK', duration: '00:48:10' },
+  { x: 2,  y: 128, provider: 'Laura Hill',        initials: 'LH', duration: '00:32:55' },
+  { x: 3,  y: 162, provider: 'Alice Newton',      initials: 'AN', duration: '00:12:04' },
+  { x: 3,  y: 118, provider: 'Robert Collins',    initials: 'RC', duration: '00:55:22' },
+  { x: 4,  y: 145, provider: 'Henry James',       initials: 'HJ', duration: '01:02:18' },
+  { x: 5,  y: 158, provider: 'Cynthia Turner',    initials: 'CT', duration: '00:41:33' },
+  { x: 5,  y: 132, provider: 'James Peterson',    initials: 'JP', duration: '00:28:47' },
+  { x: 6,  y: 143, provider: 'Emma Matthews',     initials: 'EM', duration: '00:37:15' },
+  { x: 7,  y: 151, provider: 'Thomas White',      initials: 'TW', duration: '00:51:09' },
+  { x: 8,  y: 122, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:44:20' },
+  { x: 9,  y: 148, provider: 'Michael King',      initials: 'MK', duration: '00:19:38' },
+  { x: 9,  y: 165, provider: 'Alice Newton',      initials: 'AN', duration: '00:22:51' },
+  { x: 11, y: 135, provider: 'Laura Hill',        initials: 'LH', duration: '00:38:12' },
+  { x: 12, y: 142, provider: 'Robert Collins',    initials: 'RC', duration: '00:59:44' },
+  { x: 13, y: 129, provider: 'Henry James',       initials: 'HJ', duration: '00:46:05' },
+  { x: 13, y: 156, provider: 'Cynthia Turner',    initials: 'CT', duration: '00:15:30' },
+  { x: 14, y: 138, provider: 'James Peterson',    initials: 'JP', duration: '00:33:18' },
+  { x: 15, y: 144, provider: 'Emma Matthews',     initials: 'EM', duration: '00:52:47' },
+  { x: 17, y: 133, provider: 'Thomas White',      initials: 'TW', duration: '00:29:55' },
+  { x: 18, y: 141, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:41:10' },
+  { x: 19, y: 136, provider: 'Michael King',      initials: 'MK', duration: '00:24:33' },
+  { x: 20, y: 127, provider: 'Laura Hill',        initials: 'LH', duration: '00:36:08' },
+  { x: 21, y: 145, provider: 'Robert Collins',    initials: 'RC', duration: '01:04:22' },
+  { x: 22, y: 139, provider: 'Henry James',       initials: 'HJ', duration: '00:49:17' },
+  { x: 23, y: 142, provider: 'James Peterson',    initials: 'JP', duration: '00:31:44' },
+  { x: 24, y: 131, provider: 'Emma Matthews',     initials: 'EM', duration: '00:58:30' },
+  { x: 25, y: 138, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:43:55' },
+];
+const PACE_TREND = [
+  { x: 1, trend: 148 }, { x: 5, trend: 147 }, { x: 9, trend: 145 },
+  { x: 13, trend: 144 }, { x: 17, trend: 143 }, { x: 21, trend: 142 }, { x: 25, trend: 142 },
+];
+
+const LISTEN_SCATTER = [
+  { x: 1,  y: 44, provider: 'Stephanie Jackson', initials: 'SJ', duration: '01:20:34' },
+  { x: 1,  y: 38, provider: 'Michael King',      initials: 'MK', duration: '00:48:10' },
+  { x: 2,  y: 52, provider: 'Laura Hill',        initials: 'LH', duration: '00:32:55' },
+  { x: 3,  y: 33, provider: 'Alice Newton',      initials: 'AN', duration: '00:12:04' },
+  { x: 3,  y: 61, provider: 'Robert Collins',    initials: 'RC', duration: '00:55:22' },
+  { x: 4,  y: 47, provider: 'Henry James',       initials: 'HJ', duration: '01:02:18' },
+  { x: 5,  y: 36, provider: 'Cynthia Turner',    initials: 'CT', duration: '00:41:33' },
+  { x: 5,  y: 55, provider: 'James Peterson',    initials: 'JP', duration: '00:28:47' },
+  { x: 6,  y: 48, provider: 'Emma Matthews',     initials: 'EM', duration: '00:37:15' },
+  { x: 7,  y: 42, provider: 'Thomas White',      initials: 'TW', duration: '00:51:09' },
+  { x: 8,  y: 58, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:44:20' },
+  { x: 9,  y: 40, provider: 'Michael King',      initials: 'MK', duration: '00:19:38' },
+  { x: 9,  y: 31, provider: 'Alice Newton',      initials: 'AN', duration: '00:22:51' },
+  { x: 11, y: 53, provider: 'Laura Hill',        initials: 'LH', duration: '00:38:12' },
+  { x: 12, y: 46, provider: 'Robert Collins',    initials: 'RC', duration: '00:59:44' },
+  { x: 13, y: 62, provider: 'Henry James',       initials: 'HJ', duration: '00:46:05' },
+  { x: 13, y: 35, provider: 'Cynthia Turner',    initials: 'CT', duration: '00:15:30' },
+  { x: 14, y: 50, provider: 'James Peterson',    initials: 'JP', duration: '00:33:18' },
+  { x: 15, y: 44, provider: 'Emma Matthews',     initials: 'EM', duration: '00:52:47' },
+  { x: 17, y: 57, provider: 'Thomas White',      initials: 'TW', duration: '00:29:55' },
+  { x: 18, y: 49, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:41:10' },
+  { x: 19, y: 43, provider: 'Michael King',      initials: 'MK', duration: '00:24:33' },
+  { x: 20, y: 56, provider: 'Laura Hill',        initials: 'LH', duration: '00:36:08' },
+  { x: 21, y: 51, provider: 'Robert Collins',    initials: 'RC', duration: '01:04:22' },
+  { x: 22, y: 48, provider: 'Henry James',       initials: 'HJ', duration: '00:49:17' },
+  { x: 23, y: 54, provider: 'James Peterson',    initials: 'JP', duration: '00:31:44' },
+  { x: 24, y: 60, provider: 'Emma Matthews',     initials: 'EM', duration: '00:58:30' },
+  { x: 25, y: 52, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:43:55' },
+];
+const LISTEN_TREND = [
+  { x: 1, trend: 42 }, { x: 5, trend: 44 }, { x: 9, trend: 45 },
+  { x: 13, trend: 46 }, { x: 17, trend: 47 }, { x: 21, trend: 48 }, { x: 25, trend: 48 },
+];
+
+const LANG_SCATTER = [
+  { x: 1,  y: 88, provider: 'Stephanie Jackson', initials: 'SJ', duration: '01:20:34' },
+  { x: 1,  y: 82, provider: 'Michael King',      initials: 'MK', duration: '00:48:10' },
+  { x: 2,  y: 94, provider: 'Laura Hill',        initials: 'LH', duration: '00:32:55' },
+  { x: 3,  y: 78, provider: 'Alice Newton',      initials: 'AN', duration: '00:12:04' },
+  { x: 3,  y: 97, provider: 'Robert Collins',    initials: 'RC', duration: '00:55:22' },
+  { x: 4,  y: 91, provider: 'Henry James',       initials: 'HJ', duration: '01:02:18' },
+  { x: 5,  y: 76, provider: 'Cynthia Turner',    initials: 'CT', duration: '00:41:33' },
+  { x: 5,  y: 95, provider: 'James Peterson',    initials: 'JP', duration: '00:28:47' },
+  { x: 6,  y: 89, provider: 'Emma Matthews',     initials: 'EM', duration: '00:37:15' },
+  { x: 7,  y: 83, provider: 'Thomas White',      initials: 'TW', duration: '00:51:09' },
+  { x: 8,  y: 98, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:44:20' },
+  { x: 9,  y: 87, provider: 'Michael King',      initials: 'MK', duration: '00:19:38' },
+  { x: 9,  y: 79, provider: 'Alice Newton',      initials: 'AN', duration: '00:22:51' },
+  { x: 11, y: 93, provider: 'Laura Hill',        initials: 'LH', duration: '00:38:12' },
+  { x: 12, y: 90, provider: 'Robert Collins',    initials: 'RC', duration: '00:59:44' },
+  { x: 13, y: 96, provider: 'Henry James',       initials: 'HJ', duration: '00:46:05' },
+  { x: 13, y: 77, provider: 'Cynthia Turner',    initials: 'CT', duration: '00:15:30' },
+  { x: 14, y: 99, provider: 'James Peterson',    initials: 'JP', duration: '00:33:18' },
+  { x: 15, y: 92, provider: 'Emma Matthews',     initials: 'EM', duration: '00:52:47' },
+  { x: 17, y: 86, provider: 'Thomas White',      initials: 'TW', duration: '00:29:55' },
+  { x: 18, y: 95, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:41:10' },
+  { x: 19, y: 88, provider: 'Michael King',      initials: 'MK', duration: '00:24:33' },
+  { x: 20, y: 97, provider: 'Laura Hill',        initials: 'LH', duration: '00:36:08' },
+  { x: 21, y: 93, provider: 'Robert Collins',    initials: 'RC', duration: '01:04:22' },
+  { x: 22, y: 91, provider: 'Henry James',       initials: 'HJ', duration: '00:49:17' },
+  { x: 23, y: 98, provider: 'James Peterson',    initials: 'JP', duration: '00:31:44' },
+  { x: 24, y: 94, provider: 'Emma Matthews',     initials: 'EM', duration: '00:58:30' },
+  { x: 25, y: 99, provider: 'Stephanie Jackson', initials: 'SJ', duration: '00:43:55' },
+];
+const LANG_TREND = [
+  { x: 1, trend: 87 }, { x: 5, trend: 88 }, { x: 9, trend: 89 },
+  { x: 13, trend: 90 }, { x: 17, trend: 90 }, { x: 21, trend: 91 }, { x: 25, trend: 91 },
+];
+
+/* ── Per-metric stats + chart config ── */
+const METRIC_DATA = {
+  callAdh: {
+    scatter: SCATTER_DATA, trend: TREND_DATA,
+    score: '88%', good: true,
+    trendDir: 'up', trendAmt: '12%',
+    startVariance: '74%', endVariance: '32%',
+    refLine: 80, yDomain: [0, 105], yTicks: [25, 50, 75, 100],
+    yFmt: v => `${v}%`, tipLabel: 'Call Adh.',
+  },
+  noteAdh: {
+    scatter: NOTE_SCATTER, trend: NOTE_TREND,
+    score: '76%', good: false,
+    trendDir: 'up', trendAmt: '8%',
+    startVariance: '68%', endVariance: '41%',
+    refLine: 80, yDomain: [0, 105], yTicks: [25, 50, 75, 100],
+    yFmt: v => `${v}%`, tipLabel: 'Note Adh.',
+  },
+  pace: {
+    scatter: PACE_SCATTER, trend: PACE_TREND,
+    score: '142 WPM', good: true,
+    trendDir: 'down', trendAmt: '3 WPM',
+    startVariance: '28 WPM', endVariance: '11 WPM',
+    refLine: 150, yDomain: [90, 175], yTicks: [100, 120, 140, 160],
+    yFmt: v => `${v}`, tipLabel: 'Pace',
+  },
+  listen: {
+    scatter: LISTEN_SCATTER, trend: LISTEN_TREND,
+    score: '48%', good: false,
+    trendDir: 'up', trendAmt: '6%',
+    startVariance: '42%', endVariance: '24%',
+    refLine: 50, yDomain: [0, 80], yTicks: [20, 40, 60, 80],
+    yFmt: v => `${v}%`, tipLabel: 'Listen Ratio',
+  },
+  language: {
+    scatter: LANG_SCATTER, trend: LANG_TREND,
+    score: '91%', good: true,
+    trendDir: 'up', trendAmt: '4%',
+    startVariance: '87%', endVariance: '15%',
+    refLine: 85, yDomain: [50, 105], yTicks: [60, 70, 80, 90, 100],
+    yFmt: v => `${v}%`, tipLabel: 'Language',
+  },
+};
+
 /* ── Custom hover tooltip ── */
-function ScatterTooltip({ active, payload }) {
+function ScatterTooltip({ active, payload, tipLabel = 'Value', yFmt = v => `${v}%` }) {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d?.provider) return null;
   return (
     <div className="bg-white border border-[#ebebeb] rounded-[10px] shadow-[0px_8px_24px_rgba(0,0,0,0.08)] px-[14px] py-[12px] flex flex-col gap-[8px] min-w-[180px]">
-      {/* Provider */}
       <div className="flex items-center gap-[8px]">
         <div className="shrink-0 flex items-center justify-center size-[26px] rounded-full bg-[#e0eefe]">
           <span className="text-[10px] font-medium text-[#0055a3]">{d.initials}</span>
         </div>
         <span className="text-[12px] font-medium text-[#444]">{d.provider}</span>
       </div>
-      {/* Stats */}
       <div className="flex flex-col gap-[4px]">
         <div className="flex items-center justify-between gap-[16px]">
-          <span className="text-[11px] text-[#888]">Adherence</span>
-          <span className="text-[11px] font-semibold text-[#444]">{d.y}%</span>
+          <span className="text-[11px] text-[#888]">{tipLabel}</span>
+          <span className="text-[11px] font-semibold text-[#444]">{yFmt(d.y)}</span>
         </div>
         <div className="flex items-center justify-between gap-[16px]">
           <span className="text-[11px] text-[#888]">Duration</span>
@@ -113,6 +297,8 @@ function AdherenceChart() {
   const [isOpen,  setIsOpen]  = useState(false);
   const [metric,  setMetric]  = useState(METRICS[0]);
   const menuRef = useRef(null);
+
+  const data = METRIC_DATA[metric.key];
 
   /* Close on outside click */
   useEffect(() => {
@@ -165,18 +351,22 @@ function AdherenceChart() {
       {/* Score row */}
       <div className="flex items-start justify-between">
         <div className="flex items-end gap-1">
-          <span className="text-[34px] font-medium text-[#555] leading-none">88%</span>
-          <span className="text-[18px] leading-none pb-0.5">👍</span>
+          <span className="text-[34px] font-medium text-[#555] leading-none">{data.score}</span>
+          <span className="text-[18px] leading-none pb-0.5">{data.good ? '👍' : '👎'}</span>
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <div className="flex items-center gap-1.5">
-            <TrendingUp size={11} strokeWidth={2} className="text-[#555]" />
-            <span className="text-[10px] font-medium text-[#555]">Up 12%</span>
+            {data.trendDir === 'up'
+              ? <TrendingUp  size={11} strokeWidth={2} className="text-[#555]" />
+              : <TrendingDown size={11} strokeWidth={2} className="text-[#555]" />}
+            <span className="text-[10px] font-medium text-[#555]">
+              {data.trendDir === 'up' ? 'Up' : 'Down'} {data.trendAmt}
+            </span>
             <span className="text-[10px] font-medium text-[#555]">this month</span>
           </div>
           <div className="flex items-center gap-5">
-            <span className="text-[10px] font-medium text-[#888]">Starting variance: <span className="text-[#555]">74%</span></span>
-            <span className="text-[10px] font-medium text-[#888]">Ending variance: <span className="text-[#555]">32%</span></span>
+            <span className="text-[10px] font-medium text-[#888]">Starting variance: <span className="text-[#555]">{data.startVariance}</span></span>
+            <span className="text-[10px] font-medium text-[#888]">Ending variance: <span className="text-[#555]">{data.endVariance}</span></span>
           </div>
         </div>
       </div>
@@ -200,30 +390,33 @@ function AdherenceChart() {
             yAxisId="scatter"
             type="number"
             dataKey="y"
-            domain={[0, 105]}
-            ticks={[25, 50, 75, 100]}
-            tickFormatter={(v) => `${v}%`}
+            domain={data.yDomain}
+            ticks={data.yTicks}
+            tickFormatter={data.yFmt}
             tick={{ fontSize: 11, fill: '#888', fontFamily: 'Inter' }}
             axisLine={false}
             tickLine={false}
             width={36}
           />
-          <YAxis yAxisId="trend" type="number" domain={[0, 105]} hide />
+          <YAxis yAxisId="trend" type="number" domain={data.yDomain} hide />
 
-          <ReferenceLine yAxisId="scatter" y={80} stroke="#e8e8ec" strokeDasharray="4 3" />
-          <Tooltip content={<ScatterTooltip />} cursor={false} />
+          <ReferenceLine yAxisId="scatter" y={data.refLine} stroke="#e8e8ec" strokeDasharray="4 3" />
+          <Tooltip
+            content={(props) => <ScatterTooltip {...props} tipLabel={data.tipLabel} yFmt={data.yFmt} />}
+            cursor={false}
+          />
 
           <Scatter
             xAxisId="main"
             yAxisId="scatter"
-            data={SCATTER_DATA}
+            data={data.scatter}
             shape={(props) => <ScatterDot {...props} color={metric.color} />}
             isAnimationActive={false}
           />
           <Line
             xAxisId="main"
             yAxisId="trend"
-            data={TREND_DATA}
+            data={data.trend}
             dataKey="trend"
             type="monotone"
             stroke={metric.color}
@@ -359,13 +552,13 @@ export default function CallsPage() {
   return (
     <div className="flex flex-col flex-1 px-10 py-[30px] gap-5">
       {/* Header bar */}
-      <div className="flex items-center gap-[10px] w-full">
+      <div className="flex items-center gap-[6px] w-full">
         <div className="flex items-center pr-5">
           <h1 className="text-2xl font-medium text-[#444] whitespace-nowrap">Calls</h1>
         </div>
 
         <ChecklistPicker />
-        <FilterButton icon={Funnel} label="Status" />
+        <FilterButton label="Status" />
         <ProviderPicker />
         <PatientPicker />
 

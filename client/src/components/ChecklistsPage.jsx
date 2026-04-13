@@ -219,7 +219,7 @@ export default function ChecklistsPage() {
   return (
     <div className="flex flex-col flex-1 px-10 py-[30px] gap-5">
       {/* Header */}
-      <div className="flex items-center gap-[10px] w-full">
+      <div className="flex items-center gap-[6px] w-full">
         <div className="flex items-center pr-5">
           <h1 className="text-2xl font-medium text-[#444] whitespace-nowrap">Checklists</h1>
         </div>
