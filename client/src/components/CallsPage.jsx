@@ -1,30 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   ComposedChart, Scatter, Line, XAxis, YAxis,
   ReferenceLine, ResponsiveContainer, Tooltip, CartesianGrid,
 } from 'recharts';
-import { Funnel, User, TrendingUp, ListChecks, ChevronDown } from 'lucide-react';
+import { Funnel, User, TrendingUp, ChevronDown, Check } from 'lucide-react';
 import DateRangePicker from './DateRangePicker';
 import ChecklistPicker from './ChecklistPicker';
 import ProviderPicker from './ProviderPicker';
+import PatientPicker from './PatientPicker';
 import { FilterButton, SearchInput } from './PageControls';
 import CallDetailModal from './CallDetailModal';
+import { COL, Badge, TableColHeader, CallRow, useContainerWidth, computeVisibleCols, getChecklistWidth } from './CallsTable';
+import { CALLS } from '../data/calls';
 
-/* ────────────────────────────────────────────────
-   Shared atoms (same visual patterns as TeamPage)
-───────────────────────────────────────────────── */
-const BADGE_STYLES = {
-  green:  'bg-[rgba(52,176,180,0.1)] text-[#44605e]',
-  orange: 'bg-[rgba(255,122,0,0.08)] text-[#ff7678]',
-  ruby:   'bg-[rgba(255,95,124,0.1)] text-[#ff5f7c]',
-};
-function Badge({ value, variant }) {
-  return (
-    <span className={`inline-flex items-center justify-center px-4 py-[7px] rounded-full text-[13px] font-medium whitespace-nowrap ${BADGE_STYLES[variant]}`}>
-      {value}
-    </span>
-  );
-}
 
 /* ────────────────────────────────────────────────
    Chart panel — Adherence scatter + trend line
@@ -100,32 +88,78 @@ function ScatterTooltip({ active, payload }) {
   );
 }
 
-/* ── Custom dot — slightly larger on hover via active state ── */
-function ScatterDot(props) {
-  const { cx, cy } = props;
+/* ── Metric options ── */
+const METRICS = [
+  { key: 'callAdh',  label: 'Call Adherence',   color: '#34B0B4' },
+  { key: 'noteAdh',  label: 'Note Adherence',    color: '#3BA7FF' },
+  { key: 'pace',     label: 'Pace',              color: '#618985' },
+  { key: 'listen',   label: 'Listen Ratio',      color: '#6868EC' },
+  { key: 'language', label: 'Provider Language', color: '#616D89' },
+];
+
+/* ── Custom dot ── */
+function ScatterDot({ cx, cy, color }) {
   return (
     <circle
-      cx={cx}
-      cy={cy}
-      r={4}
-      fill="#3ba7ff"
-      fillOpacity={0.75}
-      stroke="white"
-      strokeWidth={1.5}
+      cx={cx} cy={cy} r={4}
+      fill={color} fillOpacity={0.75}
+      stroke="white" strokeWidth={1.5}
       style={{ cursor: 'pointer' }}
     />
   );
 }
 
 function AdherenceChart() {
+  const [isOpen,  setIsOpen]  = useState(false);
+  const [metric,  setMetric]  = useState(METRICS[0]);
+  const menuRef = useRef(null);
+
+  /* Close on outside click */
+  useEffect(() => {
+    if (!isOpen) return;
+    function onDown(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false);
+    }
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [isOpen]);
+
   return (
     <div className="bg-white rounded-lg p-[30px] flex flex-col gap-4 flex-1 min-w-0">
       {/* Dropdown header */}
       <div className="flex items-center justify-between">
-        <button className="flex items-center gap-2 cursor-pointer">
-          <span className="text-[16px] font-medium text-[#555]">Adherence</span>
-          <ChevronDown size={14} strokeWidth={1.75} className="text-[#555]" />
-        </button>
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setIsOpen((v) => !v)}
+            className="flex items-center gap-[6px] px-[8px] py-[5px] -mx-[8px] -my-[5px] rounded-[7px] hover:bg-[#f5f5f8] transition-colors cursor-pointer"
+          >
+            <span className="text-[16px] font-medium text-[#555]">{metric.label}</span>
+            <ChevronDown
+              size={14} strokeWidth={1.75}
+              className={`text-[#888] transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {/* Dropdown menu */}
+          {isOpen && (
+            <div className="absolute top-[calc(100%+8px)] left-[-8px] z-50 bg-white rounded-[10px] shadow-[0px_8px_24px_rgba(0,0,0,0.1)] border border-[#ebebeb] py-[4px] min-w-[190px]">
+              {METRICS.map((m) => {
+                const active = metric.key === m.key;
+                return (
+                  <button
+                    key={m.key}
+                    onClick={() => { setMetric(m); setIsOpen(false); }}
+                    className={`w-full flex items-center gap-[10px] px-[12px] py-[9px] text-[13px] hover:bg-[#fafafd] transition-colors text-left ${active ? 'text-[#333] font-medium' : 'text-[#555]'}`}
+                  >
+                    <span className="size-[8px] rounded-full shrink-0" style={{ backgroundColor: m.color }} />
+                    {m.label}
+                    {active && <Check size={12} strokeWidth={2.5} className="ml-auto shrink-0" style={{ color: m.color }} />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Score row */}
@@ -150,7 +184,6 @@ function AdherenceChart() {
       {/* Chart — fills remaining vertical space */}
       <ResponsiveContainer width="100%" height="100%" className="flex-1 min-h-0">
         <ComposedChart margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-          {/* Shared X axis — numeric day-of-month */}
           <XAxis
             xAxisId="main"
             type="number"
@@ -163,8 +196,6 @@ function AdherenceChart() {
             tickLine={false}
             dy={6}
           />
-
-          {/* Y axis for scatter dots (dataKey="y" required for Scatter positioning) */}
           <YAxis
             yAxisId="scatter"
             type="number"
@@ -177,36 +208,25 @@ function AdherenceChart() {
             tickLine={false}
             width={36}
           />
-
-          {/* Hidden Y axis for trend line — same scale, no labels */}
-          <YAxis
-            yAxisId="trend"
-            type="number"
-            domain={[0, 105]}
-            hide
-          />
+          <YAxis yAxisId="trend" type="number" domain={[0, 105]} hide />
 
           <ReferenceLine yAxisId="scatter" y={80} stroke="#e8e8ec" strokeDasharray="4 3" />
-
           <Tooltip content={<ScatterTooltip />} cursor={false} />
 
-          {/* One dot per call */}
           <Scatter
             xAxisId="main"
             yAxisId="scatter"
             data={SCATTER_DATA}
-            shape={<ScatterDot />}
+            shape={(props) => <ScatterDot {...props} color={metric.color} />}
             isAnimationActive={false}
           />
-
-          {/* Upward trend line */}
           <Line
             xAxisId="main"
             yAxisId="trend"
             data={TREND_DATA}
             dataKey="trend"
             type="monotone"
-            stroke="#3ba7ff"
+            stroke={metric.color}
             strokeWidth={1.5}
             strokeDasharray="6 3"
             dot={false}
@@ -223,16 +243,16 @@ function AdherenceChart() {
    Critical calls panel
 ───────────────────────────────────────────────── */
 const CRITICAL_CALLS = [
-  { name: 'Lisa Wong',         time: 'Today, 11:30 AM',    flags: [{ label: 'Pace: 110 WPM' }, { label: 'Adherence: 0%' }] },
-  { name: 'Sarah Lee',         time: 'Today, 10:00 AM',    flags: [{ label: 'Pace: 122 WPM' }, { label: 'Adherence: 0%' }] },
-  { name: 'Emily Johnson',     time: 'Today, 9:30 AM',     flags: [{ label: 'Adherence: 0%' }] },
-  { name: 'David Kim',         time: 'Yesterday, 1:45 PM', flags: [{ label: 'Pace: 107 WPM' }] },
-  { name: 'Michael Smith',     time: 'Yesterday, 2:15 PM', flags: [{ label: 'Listen: 32%' }, { label: 'Adherence: 85%' }] },
+  { callIndex: 0, time: 'Today, 11:30 AM',    flags: [{ label: 'Pace: 110 WPM' }, { label: 'Adherence: 0%' }] },
+  { callIndex: 1, time: 'Today, 10:00 AM',    flags: [{ label: 'Pace: 122 WPM' }, { label: 'Adherence: 0%' }] },
+  { callIndex: 2, time: 'Today, 9:30 AM',     flags: [{ label: 'Adherence: 0%' }] },
+  { callIndex: 3, time: 'Yesterday, 1:45 PM', flags: [{ label: 'Pace: 107 WPM' }] },
+  { callIndex: 4, time: 'Yesterday, 2:15 PM', flags: [{ label: 'Listen: 32%' }, { label: 'Adherence: 85%' }] },
 ];
 
-function CriticalCalls() {
+function CriticalCalls({ onSelect }) {
   return (
-    <div className="bg-white rounded-lg flex flex-col w-[380px] shrink-0 overflow-hidden">
+    <div className="bg-white rounded-lg flex flex-col w-[450px] shrink-0 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <span className="text-[16px] font-medium text-[#555]">Most critical calls</span>
@@ -240,228 +260,39 @@ function CriticalCalls() {
 
       {/* List */}
       <div className="flex flex-col overflow-y-auto px-3 pb-3 gap-1">
-        {CRITICAL_CALLS.map((call, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-3 px-3 py-[10px] rounded-lg hover:bg-[#fafafd] transition-colors cursor-pointer"
-          >
-            {/* Avatar */}
-            <div className="flex items-center justify-center shrink-0 size-[28px] rounded-full bg-[#e0eefe]">
-              <User size={13} strokeWidth={1.75} className="text-[#0055a3]" />
+        {CRITICAL_CALLS.map((item, i) => {
+          const call = CALLS[item.callIndex];
+          return (
+            <div
+              key={i}
+              onClick={() => onSelect(call)}
+              className="flex items-center gap-3 px-3 py-[10px] rounded-lg hover:bg-[#fafafd] transition-colors cursor-pointer"
+            >
+              {/* Avatar */}
+              <div className="flex items-center justify-center shrink-0 size-[28px] rounded-full bg-[#e0eefe]">
+                <User size={13} strokeWidth={1.75} className="text-[#0055a3]" />
+              </div>
+
+              {/* Name + time */}
+              <div className="flex flex-col min-w-0 shrink-0">
+                <span className="text-[12px] font-medium text-[#020817] whitespace-nowrap">{call.provider.name}</span>
+                <span className="text-[11px] text-[#616d89] whitespace-nowrap">{item.time}</span>
+              </div>
+
+              <div className="flex-1" />
+
+              {/* Flag tags */}
+              <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                {item.flags.map((flag, j) => (
+                  <div key={j} className="flex items-center gap-[4px]">
+                    <div className="size-[6px] rounded-full bg-[#ff5f7c] shrink-0" />
+                    <span className="text-[10px] font-medium text-[#ff5f7c] whitespace-nowrap">{flag.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-
-            {/* Name + time */}
-            <div className="flex flex-col min-w-0 shrink-0">
-              <span className="text-[12px] font-medium text-[#020817] whitespace-nowrap">{call.name}</span>
-              <span className="text-[11px] text-[#616d89] whitespace-nowrap">{call.time}</span>
-            </div>
-
-            <div className="flex-1" />
-
-            {/* Flag tags */}
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
-              {call.flags.map((flag, j) => (
-                <div key={j} className="flex items-center gap-[4px]">
-                  <div className="size-[6px] rounded-full bg-[#ff5f7c] shrink-0" />
-                  <span className="text-[10px] font-medium text-[#ff5f7c] whitespace-nowrap">{flag.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ────────────────────────────────────────────────
-   Calls table
-───────────────────────────────────────────────── */
-const COL = {
-  date:      90,
-  provider:  220,
-  patient:   150,
-  checklist: 250,
-  callAdh:   100,
-  noteAdh:   120,
-  pace:      100,
-  listen:    100,
-  language:  100,
-  duration:  100,
-};
-
-const CALLS = [
-  {
-    date: 'Today', provider: { name: 'Stephanie Jackson', dept: 'Neurology', initials: 'SJ' },
-    patient: 'Stephanie Jackson', checklist: 'Behavioral Health Follow-up',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '100%',     variant: 'green' },
-    pace:     { value: '135 WPM',  variant: 'green' },
-    listen:   { value: '56%',      variant: 'orange' },
-    language: { value: '98%',      variant: 'green' },
-    duration: { value: '01:20:34', variant: 'green' },
-  },
-  {
-    date: 'Today', provider: { name: 'Michael King', dept: 'Cardiology', initials: 'MK' },
-    patient: 'Ronald Carter', checklist: 'Behavioral Health Follow-up',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '56%',      variant: 'orange' },
-    pace:     { value: '150 WPM',  variant: 'green' },
-    listen:   { value: '70%',      variant: 'green' },
-    language: { value: '92%',      variant: 'green' },
-    duration: { value: '00:48:10', variant: 'green' },
-  },
-  {
-    date: 'Today', provider: { name: 'Laura Hill', dept: 'Pediatrics', initials: 'LH' },
-    patient: 'Maria Santos', checklist: 'Nurse Discharge',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '95%',      variant: 'green' },
-    pace:     { value: '140 WPM',  variant: 'green' },
-    listen:   { value: '80%',      variant: 'green' },
-    language: { value: '100%',     variant: 'green' },
-    duration: { value: '00:32:55', variant: 'green' },
-  },
-  {
-    date: 'Today', provider: { name: 'Alice Newton', dept: 'Dermatology', initials: 'AN' },
-    patient: 'James Wright', checklist: 'HIPAA Compliance',
-    callAdh:  { value: '45%',      variant: 'ruby' },
-    noteAdh:  { value: '46%',      variant: 'orange' },
-    pace:     { value: '160 WPM',  variant: 'green' },
-    listen:   { value: '90%',      variant: 'ruby' },
-    language: { value: '88%',      variant: 'green' },
-    duration: { value: '00:12:04', variant: 'orange' },
-  },
-  {
-    date: 'Yesterday', provider: { name: 'Robert Collins', dept: 'Oncology', initials: 'RC' },
-    patient: 'Linda Park', checklist: 'Behavioral Health Follow-up',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '88%',      variant: 'green' },
-    pace:     { value: '130 WPM',  variant: 'green' },
-    listen:   { value: '65%',      variant: 'green' },
-    language: { value: '95%',      variant: 'green' },
-    duration: { value: '00:55:22', variant: 'green' },
-  },
-  {
-    date: 'Yesterday', provider: { name: 'Henry James', dept: 'Orthopedics', initials: 'HJ' },
-    patient: 'Thomas Rivera', checklist: 'Post-Surgical',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '85%',      variant: 'green' },
-    pace:     { value: '125 WPM',  variant: 'green' },
-    listen:   { value: '60%',      variant: 'green' },
-    language: { value: '97%',      variant: 'green' },
-    duration: { value: '01:02:18', variant: 'green' },
-  },
-  {
-    date: 'Yesterday', provider: { name: 'Cynthia Turner', dept: 'Gastroenterology', initials: 'CT' },
-    patient: 'Barbara Evans', checklist: 'Nurse Discharge',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '93%',      variant: 'green' },
-    pace:     { value: '145 WPM',  variant: 'green' },
-    listen:   { value: '75%',      variant: 'green' },
-    language: { value: '100%',     variant: 'green' },
-    duration: { value: '00:41:33', variant: 'green' },
-  },
-  {
-    date: 'Jun 8', provider: { name: 'James Peterson', dept: 'Endocrinology', initials: 'JP' },
-    patient: 'William Chen', checklist: 'HIPAA Compliance',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '90%',      variant: 'green' },
-    pace:     { value: '120 WPM',  variant: 'green' },
-    listen:   { value: '68%',      variant: 'green' },
-    language: { value: '91%',      variant: 'green' },
-    duration: { value: '00:28:47', variant: 'green' },
-  },
-  {
-    date: 'Jun 8', provider: { name: 'Emma Matthews', dept: 'Urology', initials: 'EM' },
-    patient: 'Patricia Nguyen', checklist: 'Behavioral Health Follow-up',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '98%',      variant: 'green' },
-    pace:     { value: '155 WPM',  variant: 'green' },
-    listen:   { value: '82%',      variant: 'green' },
-    language: { value: '99%',      variant: 'green' },
-    duration: { value: '00:37:15', variant: 'green' },
-  },
-  {
-    date: 'Jun 7', provider: { name: 'Thomas White', dept: 'Ophthalmology', initials: 'TW' },
-    patient: 'Charles Moore', checklist: 'Post-Surgical',
-    callAdh:  { value: '100%',     variant: 'green' },
-    noteAdh:  { value: '87%',      variant: 'green' },
-    pace:     { value: '110 WPM',  variant: 'green' },
-    listen:   { value: '73%',      variant: 'green' },
-    language: { value: '96%',      variant: 'green' },
-    duration: { value: '00:51:09', variant: 'green' },
-  },
-];
-
-function TableColHeader({ label, width, align = 'center' }) {
-  return (
-    <div
-      className={`shrink-0 h-[44px] flex items-center px-[10px] ${align === 'center' ? 'justify-center' : ''} text-[12px] font-medium text-[#777] whitespace-nowrap`}
-      style={{ width }}
-    >
-      {label}
-    </div>
-  );
-}
-
-function CallRow({ call, onClick }) {
-  return (
-    <div onClick={onClick} className="flex items-center px-[10px] py-[18px] border-b border-[#ebebeb] hover:bg-white transition-colors cursor-pointer">
-      {/* Date */}
-      <div className="shrink-0 px-[10px]" style={{ width: COL.date }}>
-        <span className="text-[13px] text-[#777]">{call.date}</span>
-      </div>
-
-      {/* Provider */}
-      <div className="shrink-0 flex items-center gap-2 px-[10px]" style={{ width: COL.provider }}>
-        <div className="flex items-center justify-center shrink-0 size-[40px] rounded-full bg-[#e0eefe]">
-          <span className="text-[16px] font-medium text-[#0055a3] tracking-[-0.18px]">{call.provider.initials}</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[14px] font-medium text-[#020817] leading-[18px] whitespace-nowrap">{call.provider.name}</span>
-          <span className="text-[12px] text-[#777] leading-[18px] whitespace-nowrap">{call.provider.dept}</span>
-        </div>
-      </div>
-
-      {/* Patient */}
-      <div className="shrink-0 px-[10px]" style={{ width: COL.patient }}>
-        <span className="text-[12px] text-[#777] whitespace-nowrap">{call.patient}</span>
-      </div>
-
-      {/* Checklist */}
-      <div className="shrink-0 flex items-center gap-2 px-[10px]" style={{ width: COL.checklist }}>
-        <ListChecks size={14} strokeWidth={1.75} className="text-[#9b9ba7] shrink-0" />
-        <span className="text-[13px] font-medium text-[#777] truncate">{call.checklist}</span>
-      </div>
-
-      {/* Call Adherence */}
-      <div className="shrink-0 flex items-center justify-center" style={{ width: COL.callAdh }}>
-        <Badge {...call.callAdh} />
-      </div>
-
-      {/* Note Adherence */}
-      <div className="shrink-0 flex items-center justify-center" style={{ width: COL.noteAdh }}>
-        <Badge {...call.noteAdh} />
-      </div>
-
-      {/* Pace */}
-      <div className="shrink-0 flex items-center justify-center" style={{ width: COL.pace }}>
-        <Badge {...call.pace} />
-      </div>
-
-      {/* Listen */}
-      <div className="shrink-0 flex items-center justify-center" style={{ width: COL.listen }}>
-        <Badge {...call.listen} />
-      </div>
-
-      {/* Language */}
-      <div className="shrink-0 flex items-center justify-center" style={{ width: COL.language }}>
-        <Badge {...call.language} />
-      </div>
-
-      {/* Duration */}
-      <div className="shrink-0 flex items-center justify-center" style={{ width: COL.duration }}>
-        <Badge {...call.duration} />
+          );
+        })}
       </div>
     </div>
   );
@@ -470,16 +301,60 @@ function CallRow({ call, onClick }) {
 /* ────────────────────────────────────────────────
    Page
 ───────────────────────────────────────────────── */
+/* ── Sort helper ── */
+function callSortVal(call, key) {
+  switch (key) {
+    case 'date':      return (call.date || '') + ' ' + (call.time || '');
+    case 'provider':  return call.provider.name;
+    case 'patient':   return call.patient;
+    case 'checklist': return call.checklist;
+    case 'callAdh':   return parseFloat(call.callAdh.value) || 0;
+    case 'noteAdh':   return parseFloat(call.noteAdh.value) || 0;
+    case 'pace':      return parseFloat(call.pace.value) || 0;
+    case 'listen':    return parseFloat(call.listen.value) || 0;
+    case 'language':  return parseFloat(call.language.value) || 0;
+    case 'duration':  return call.duration.value;
+    default:          return '';
+  }
+}
+
 export default function CallsPage() {
   const [search, setSearch] = useState('');
   const [activePeriod, setActivePeriod] = useState('1M');
-  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [selectedCall, setSelectedCall] = useState(null);
+  const [sortKey, setSortKey] = useState('date');
+  const [sortDir, setSortDir] = useState('desc');
+
+  function handleSort(key) {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortKey(key); setSortDir('asc'); }
+  }
 
   const filtered = CALLS.filter((c) =>
     c.provider.name.toLowerCase().includes(search.toLowerCase()) ||
     c.patient.toLowerCase().includes(search.toLowerCase()) ||
     c.checklist.toLowerCase().includes(search.toLowerCase())
   );
+
+  const sorted = sortKey
+    ? [...filtered].sort((a, b) => {
+        const av = callSortVal(a, sortKey);
+        const bv = callSortVal(b, sortKey);
+        const cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv));
+        return sortDir === 'asc' ? cmp : -cmp;
+      })
+    : filtered;
+
+  const selectedIndex = selectedCall ? sorted.indexOf(selectedCall) : -1;
+
+  const sh = { activeSortKey: sortKey, sortDir, onSort: handleSort };
+
+  // Responsive table
+  const ROW_PAD = 20; // px-[10px] on each row = 10 left + 10 right
+  const [tableRef, containerW] = useContainerWidth();
+  const availableW    = containerW - ROW_PAD;
+  const visibleCols   = computeVisibleCols(availableW);
+  const checklistW    = getChecklistWidth(availableW, visibleCols);
 
   return (
     <div className="flex flex-col flex-1 px-10 py-[30px] gap-5">
@@ -492,7 +367,7 @@ export default function CallsPage() {
         <ChecklistPicker />
         <FilterButton icon={Funnel} label="Status" />
         <ProviderPicker />
-        <FilterButton label="By Patient" />
+        <PatientPicker />
 
         <div className="flex-1" />
 
@@ -505,33 +380,33 @@ export default function CallsPage() {
       </div>
 
       {/* Chart + Critical calls */}
-      <div className="flex gap-5 w-full">
+      <div className="flex gap-3 w-full">
         <AdherenceChart />
-        <CriticalCalls />
+        <CriticalCalls onSelect={setSelectedCall} />
       </div>
 
       {/* Table */}
-      <div className="rounded-lg overflow-hidden">
+      <div ref={tableRef} className="rounded-lg overflow-hidden">
         {/* Header */}
         <div className="flex items-center px-[10px] border-b border-[#ebebeb]">
-          <TableColHeader label="Date" width={COL.date} align="left" />
-          <TableColHeader label="Provider" width={COL.provider} align="left" />
-          <TableColHeader label="Patient" width={COL.patient} align="left" />
-          <TableColHeader label="Checklist" width={COL.checklist} align="left" />
-          <TableColHeader label="Call Adherence" width={COL.callAdh} />
-          <TableColHeader label="Note Adherence" width={COL.noteAdh} />
-          <TableColHeader label="Pace" width={COL.pace} />
-          <TableColHeader label="Listen" width={COL.listen} />
-          <TableColHeader label="Language" width={COL.language} />
-          <TableColHeader label="Duration" width={COL.duration} />
+          {visibleCols.has('date')     && <TableColHeader label="Date"           width={COL.date}     align="left" sortKey="date"      {...sh} />}
+          {visibleCols.has('provider') && <TableColHeader label="Provider"       width={COL.provider} align="left" sortKey="provider"  {...sh} />}
+          {visibleCols.has('patient')  && <TableColHeader label="Patient"        width={COL.patient}  align="left" sortKey="patient"   {...sh} />}
+          {visibleCols.has('checklist') && <TableColHeader label="Checklist" width={checklistW} align="left" sortKey="checklist" {...sh} />}
+          {visibleCols.has('callAdh')  && <TableColHeader label="Call Adherence" width={COL.callAdh}              sortKey="callAdh"   {...sh} />}
+          {visibleCols.has('noteAdh')  && <TableColHeader label="Note Adherence" width={COL.noteAdh}              sortKey="noteAdh"   {...sh} />}
+          {visibleCols.has('pace')     && <TableColHeader label="Pace"           width={COL.pace}                 sortKey="pace"      {...sh} />}
+          {visibleCols.has('listen')   && <TableColHeader label="Listen"         width={COL.listen}               sortKey="listen"    {...sh} />}
+          {visibleCols.has('language') && <TableColHeader label="Language"       width={COL.language}             sortKey="language"  {...sh} />}
+          {visibleCols.has('duration') && <TableColHeader label="Duration"       width={COL.duration}             sortKey="duration"  {...sh} />}
         </div>
 
         {/* Rows */}
         <div>
-          {filtered.map((call, i) => (
-            <CallRow key={i} call={call} onClick={() => setSelectedIndex(i)} />
+          {sorted.map((call, i) => (
+            <CallRow key={i} call={call} onClick={() => setSelectedCall(call)} visibleCols={visibleCols} checklistWidth={checklistW} />
           ))}
-          {filtered.length === 0 && (
+          {sorted.length === 0 && (
             <div className="flex items-center justify-center py-16 text-[14px] text-[#9b9ba7]">
               No calls match your search.
             </div>
@@ -540,14 +415,14 @@ export default function CallsPage() {
       </div>
 
       {/* Call detail modal */}
-      {selectedIndex !== null && (
+      {selectedCall && (
         <CallDetailModal
-          call={filtered[selectedIndex]}
-          callIndex={selectedIndex}
-          totalCalls={filtered.length}
-          onClose={() => setSelectedIndex(null)}
-          onNext={() => setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1))}
-          onPrev={() => setSelectedIndex((i) => Math.max(i - 1, 0))}
+          call={selectedCall}
+          callIndex={Math.max(0, selectedIndex)}
+          totalCalls={sorted.length}
+          onClose={() => setSelectedCall(null)}
+          onNext={() => { const next = sorted[selectedIndex + 1]; if (next) setSelectedCall(next); }}
+          onPrev={() => { const prev = sorted[selectedIndex - 1]; if (prev) setSelectedCall(prev); }}
         />
       )}
     </div>

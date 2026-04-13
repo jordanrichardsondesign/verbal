@@ -124,7 +124,7 @@ function Avatar({ initials }) {
   );
 }
 
-function CoachingRoster() {
+function CoachingRoster({ onNavigate }) {
   const [activeTab, setActiveTab] = useState('below');
   const agents = ROSTER[activeTab] ?? [];
 
@@ -136,7 +136,10 @@ function CoachingRoster() {
           <span className="text-[15px] font-semibold text-[#020817]">Coaching Roster</span>
           <span className="text-[12px] text-[#9b9ba7]">Based on this week's calls</span>
         </div>
-        <button className="text-[13px] font-medium text-[#555] hover:text-[#333] transition-colors cursor-pointer whitespace-nowrap">
+        <button
+          onClick={() => onNavigate('Team')}
+          className="text-[13px] font-medium text-[#555] hover:text-[#333] transition-colors cursor-pointer whitespace-nowrap"
+        >
           View all
         </button>
       </div>
@@ -193,11 +196,11 @@ function CoachingRoster() {
   );
 }
 
-export default function DashboardActionRow() {
+export default function DashboardActionRow({ onNavigate }) {
   return (
     <div className="dashboard-action-row flex flex-row gap-3 w-full">
       <WhatToActOn />
-      <CoachingRoster />
+      <CoachingRoster onNavigate={onNavigate} />
     </div>
   );
 }

@@ -6,6 +6,8 @@ import StatRow from './StatRow';
 import DashboardActionRow from './DashboardActionRow';
 import DateRangePicker from './DateRangePicker';
 import ChecklistPicker from './ChecklistPicker';
+import ProviderPicker from './ProviderPicker';
+import PatientPicker from './PatientPicker';
 
 function FilterButton({ icon: Icon, label, active }) {
   return (
@@ -22,7 +24,7 @@ function FilterButton({ icon: Icon, label, active }) {
   );
 }
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
   const [activePeriod, setActivePeriod] = useState('1W');
 
   return (
@@ -37,6 +39,8 @@ export default function Dashboard() {
 
         <ChecklistPicker />
         <FilterButton icon={Funnel} label="Status" />
+        <ProviderPicker />
+        <PatientPicker />
 
         <div className="flex-1" />
 
@@ -53,7 +57,7 @@ export default function Dashboard() {
       <StatRow />
 
       {/* Action row — what to act on + coaching roster */}
-      <DashboardActionRow />
+      <DashboardActionRow onNavigate={onNavigate} />
     </div>
   );
 }
